@@ -1,105 +1,75 @@
 #encoding:utf-8
-from main.models import Usuario, Ocupacion, Puntuacion, Pelicula, Categoria
+from main.models import Artista, Etiqueta, UsuarioArtista, UsuarioEtiquetaArtista
 from datetime import datetime
 
 path = "data"
 
 def populate():
-    o=populateOccupations()
-    g=populateGenres()
-    (u, us)=populateUsers()
-    (m, mo)=populateMovies()
-    p=populateRatings(u,m)  #USAMOS LOS DICCIONARIOS DE USUARIOS Y PELICULAS PARA ACELERAR LA CARGA EN PUNTUACIONES
-    return (o,g,us,mo,p)
+    populateArtista()
+    populateEtiqueta()
+    populateUsuarioArtista()
+    populateUsuarioEtiquetaArtista()
+   
+    return True
 
-def populateOccupations():
-    Ocupacion.objects.all().delete()
+def populateArtista():
+    Artista.objects.all().delete()
     
     lista=[]
-    fileobj=open(path+"\\u.occupation", "r")
-    for line in fileobj.readlines():
-        lista.append(Ocupacion(nombre=str(line.strip())))
-    fileobj.close()
-    Ocupacion.objects.bulk_create(lista)  # bulk_create hace la carga masiva para acelerar el proceso
-    
-    return Ocupacion.objects.count()
 
-def populateGenres():
-    Categoria.objects.all().delete()
+    with open(path+"\\artists.dat", "r",encoding="ISO-8859-1") as f:
+        next(f)
+        for line in f:
+            splits = line.split("\t")
+            lista.append(Artista(IdArtista= int(splits[0].strip()),nombre= str(splits[1].strip()), Url= str(splits[2].strip()), PictureUrl= str(splits[3].strip())))
     
-    lista=[]
-    fileobj=open(path+"\\u.genre", "r")
-    for line in fileobj.readlines():
-        rip = str(line.strip()).split('|')
-        if len(rip) != 2:
-            continue
-        lista.append(Categoria(idCategoria=int(rip[1]), nombre=rip[0]))
-    fileobj.close()
-    Categoria.objects.bulk_create(lista)
+    Artista.objects.bulk_create(lista)  # bulk_create hace la carga masiva para acelerar el proceso
     
-    return Categoria.objects.count()
+    return Artista.objects.count()
 
-def populateUsers():
-    Usuario.objects.all().delete()
+def populateEtiqueta():
+    Etiqueta.objects.all().delete()
     
     lista=[]
-    dict={} # diccionario de los usuarios {idusuario:objeto_usuario}
-    fileobj=open(path+"\\u.user", "r")
-    for line in fileobj.readlines():
-        rip = str(line.strip()).split('|')
-        if len(rip) != 5:
-            continue
-        u=Usuario(idUsuario=int(rip[0]), edad=int(rip[1]), sexo=rip[2], ocupacion=Ocupacion.objects.get(nombre=rip[3]), codigoPostal=rip[4])
-        lista.append(u)
-        dict[int(rip[0])]=u
-    fileobj.close()
-    Usuario.objects.bulk_create(lista)
+
+    with open(path+"\\tags.dat", "r",encoding="ISO-8859-1") as f:
+        next(f)
+        for line in f:
+            splits = line.split("\t")
+            lista.append(Etiqueta(IdTag= int(splits[0].strip()),TagValue= str(splits[1].strip())))
     
-    return(dict, Usuario.objects.count())
-
-def populateMovies():
-    Pelicula.objects.all().delete()
+    Etiqueta.objects.bulk_create(lista)  # bulk_create hace la carga masiva para acelerar el proceso
     
-    lista_peliculas =[]  # lista de peliculas
-    dict_categorias={}  #  diccionario de categorias de cada pelicula (idPelicula y lista de categorias)
-    fileobj=open(path+"\\u.item", "r")
-    for line in fileobj.readlines():
-        rip = line.strip().split('|')
-        
-        date = None if len(rip[2]) == 0 else datetime.strptime(rip[2], '%d-%b-%Y')
-        lista_peliculas.append(Pelicula(idPelicula=int(rip[0]), titulo=rip[1], fechaEstreno=date, imdbUrl=rip[4]))
-        
-        lista_aux=[]
-        for i in range(5, len(rip)):
-            if rip [i] == '1':
-                lista_aux.append(Categoria.objects.get(pk = (i-5)))
-        dict_categorias[int(rip[0])]=lista_aux
-    fileobj.close()    
-    Pelicula.objects.bulk_create(lista_peliculas)
+    return Etiqueta.objects.count()
 
-    dict={} # diccionario de las pel�culas {idpelicula:objeto_pelicula}
-    for pelicula in Pelicula.objects.all():
-        #aqu� se a�aden las categorias a cada pel�cula
-        pelicula.categorias.set(dict_categorias[pelicula.idPelicula])
-        dict[pelicula.idPelicula]=pelicula
+def populateUsuarioArtista():
+    UsuarioArtista.objects.all().delete()
     
-    return(dict, Pelicula.objects.count())
-
-def populateRatings(u,m):
-    # usamos los diccionarios de usuarios y pel�culas para acelerar la creaci�n de las puntuaciones
-    # evitando tener que acceder a las tablas de Usuario y Pelicula
-    Puntuacion.objects.all().delete()
-
     lista=[]
-    fileobj=open(path+"\\u.data", "r")
-    for line in fileobj.readlines():
-        rip = str(line.strip()).split('\t')
-        lista.append(Puntuacion(idUsuario=u[int(rip[0])], idPelicula=m[int(rip[1])], puntuacion=int(rip[2])))
-    fileobj.close()
-    Puntuacion.objects.bulk_create(lista)
 
-    return Puntuacion.objects.count()
-
-
+    with open(path+"\\user_artists.dat", "r",encoding="ISO-8859-1") as f:
+        next(f)
+        for line in f:
+            splits = line.split("\t")
+            lista.append(UsuarioArtista(IdUsuario= int(splits[0].strip()),IdArtista= Artista.objects.get(IdArtista= int(splits[1].strip())) , TiempoEscucha= int(splits[2].strip()) ))
     
+    UsuarioArtista.objects.bulk_create(lista)  # bulk_create hace la carga masiva para acelerar el proceso
+    
+    return UsuarioArtista.objects.count()
 
+def populateUsuarioEtiquetaArtista():
+    UsuarioEtiquetaArtista.objects.all().delete()
+    
+    lista=[]
+
+    with open(path+"\\user_taggedartists.dat", "r",encoding="ISO-8859-1") as f:
+        next(f)
+        for line in f:
+            splits = line.split("\t")
+            try:
+                lista.append(UsuarioEtiquetaArtista(IdUsuario= int(splits[0].strip()),IdArtista= Artista.objects.get(IdArtista= int(splits[1].strip())), IdTag= Etiqueta.objects.get(IdTag = int(splits[2].strip())), Dia= int(splits[3].strip()), Mes= int(splits[4].strip()), Ano= int(splits[5].strip()) ))
+            except: 
+                pass
+    UsuarioEtiquetaArtista.objects.bulk_create(lista)  # bulk_create hace la carga masiva para acelerar el proceso
+    
+    return UsuarioEtiquetaArtista.objects.count()

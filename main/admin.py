@@ -1,8 +1,6 @@
-from main.models import Ocupacion, Usuario, Categoria, Pelicula, Puntuacion
+from main.models import Artista, Etiqueta
 from django.contrib import admin
 
-admin.site.register(Ocupacion)
-admin.site.register(Usuario)
-admin.site.register(Categoria)
-admin.site.register(Pelicula)
-admin.site.register(Puntuacion)
+admin.site.register(Artista)
+admin.site.register(Etiqueta)
+
