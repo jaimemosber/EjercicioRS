@@ -1,6 +1,49 @@
 #encoding:utf-8
-
+from main.models import UsuarioEtiquetaArtista, UsuarioArtista
 from math import sqrt
+from django.db.models import Count
+from collections import Counter
+
+def top_artist_tags():
+    # Calcula el conjunto de diez etiquetas más frecuentes de cada artista
+    artists = {}
+    anterior = -1
+    suma = 1
+    for e in UsuarioEtiquetaArtista.objects.values('IdArtista','IdTag').annotate(tag_count=Count('IdTag')).order_by('IdArtista','-tag_count'):
+        if e['IdArtista'] == anterior and suma <= 10:
+            artists[e['IdArtista']].add(e['IdTag'])
+            suma = suma + 1
+        else:
+            artists[e['IdArtista']] = set([e['IdTag']])
+            suma = 1
+            anterior = e['IdArtista']
+    return artists
+    
+def top_user_tags(artist_tags):
+    # Calcula el conjunto de  etiquetas de los cinco artistas más esc. de cada user
+    usuarios = {}
+    anterior = -1
+    suma = 1
+    for e in UsuarioArtista.objects.values('IdUsuario', 'IdArtista','TiempoEscucha').order_by('IdUsuario','-TiempoEscucha'):
+        if e['IdUsuario'] == anterior and suma <= 5:
+            if e['IdArtista'] in artist_tags.keys():
+                usuarios[e['IdUsuario']].union(artist_tags[e['IdArtista']])
+                suma = suma + 1
+        else:
+            if e['IdArtista'] in artist_tags.keys():
+                usuarios[e['IdUsuario']] = set(artist_tags[e['IdArtista']])
+                suma = 1
+                anterior = e['IdUsuario']
+    return usuarios
+
+def compute_similarities(artist_tags, user_tags):
+    res = {}
+    for u in user_tags:
+        top_artists = {}
+        for a in artist_tags:
+            top_artists[a] = dice_coefficient(user_tags[u], artist_tags[a])
+        res[u] = Counter(top_artists).most_common(20)
+    return res 
 
 # Returns a distance-based similarity score for person1 and person2
 def sim_distance(prefs, person1, person2):
@@ -143,3 +186,5 @@ def getRecommendedItems(prefs, itemMatch, user):
     rankings.reverse()
     return rankings
 
+def dice_coefficient(set1, set2):
+    return 2 * len(set1.intersection(set2)) / (len(set1) + len(set2))

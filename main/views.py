@@ -5,25 +5,34 @@ from main import populateDB
 from django.contrib.auth.decorators import login_required
 from django.db.models import Max
 import shelve
-from main.recommendations import  transformPrefs, getRecommendations, topMatches, sim_distance,calculateSimilarItems
+from main.recommendations import  transformPrefs, getRecommendations, topMatches, sim_distance,calculateSimilarItems, top_artist_tags, top_user_tags, compute_similarities
 from django.conf import settings
+from main.models import UsuarioArtista
 
 
 
-def loadDict():
-    Prefs={}   # matriz de usuarios y puntuaciones a cada a items
-    shelf = shelve.open("dataRS.dat")
-    ratings = Puntuacion.objects.all()
-    for ra in ratings:
-        user = ra.idUsuario.id
-        itemid = ra.idPelicula.id
-        rating = ra.puntuacion
-        Prefs.setdefault(user, {})
-        Prefs[user][itemid] = rating
-    shelf['Prefs']=Prefs
-    shelf['ItemsPrefs']=transformPrefs(Prefs)
+def loadDict(request):
+    # matriz de usuarios y puntuaciones a cada a items
+    shelf = shelve.open("dataRS")
+
+    artistsTags = top_artist_tags()
+    userTags = top_user_tags(artistsTags)
+    perfilesParecidos = compute_similarities(artistsTags, userTags)
+
+    shelf['UserTags']=artistsTags
+    shelf['ArtistTags']=userTags
+    shelf['PerfilesParecidos']=perfilesParecidos
     shelf.close()
+    
+    mensaje = 'Se han cargado la matriz y la matriz invertida '
+    return render(request, 'message.html',{'titulo':'FIN DE CARGA DEL RS','mensaje':mensaje,'STATIC_URL':settings.STATIC_URL})
 
+def top_artists_user(self):
+    usuarioArtistas = []
+    q = self.GET.get("q")
+    if q is not None:
+        usuarioArtistas = UsuarioArtista.objects.filter(IdUsuario = q).order_by('IdUsuario', '-TiempoEscucha')[:5]
+    return render(self, 'usuarioartistas.html',{'usuarioArtistas':usuarioArtistas})
 
 def cargar(request):
     if populateDB.populate():

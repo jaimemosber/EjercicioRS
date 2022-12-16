@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+
+{% block encabezado %}
+<h1> Listado de artistas más escuchados </h1>
+{% endblock %}
+
+{% block contenido %}
+	  <form method="GET" action="" id="searchform">
+        <input class="input-buscador" id="searchbox" name="q" type="text" value="{{ request.GET.q }}" placeholder="Buscar..."/>
+        <button class="btn boton-buscador" type="submit" title="Search" aria-label="Search">
+            <span class="boton-buscador-texto">Buscar</span>
+        </button>
+    </form>
+    {%if usuarioArtistas%}
+        {{usuarioArtistas}}
+        {%for u in usuarioArtistas%}
+        <p><strong>{{u.IdArtista}}</strong> Duración: {{u.TiempoEscucha}}</p>
+        {%endfor%}
+    {%endif%}
+{% endblock %}

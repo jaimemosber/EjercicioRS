@@ -6,4 +6,6 @@ urlpatterns = [
     path('', views.inicio),
     path('cargar/', views.cargar), 
     path('admin/',admin.site.urls),
+    path('cargar_matriz/',views.loadDict),
+    path('usuarioartistas/',views.top_artists_user),
     ]
