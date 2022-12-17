@@ -8,4 +8,7 @@ urlpatterns = [
     path('admin/',admin.site.urls),
     path('cargar_matriz/',views.loadDict),
     path('usuarioartistas/',views.top_artists_user),
+    path('etiquetasArtista/',views.top_artist_tags),
+    path('recomendaciones/',views.recomendaciones),
+    path('ingresar/', views.ingresar),    
     ]

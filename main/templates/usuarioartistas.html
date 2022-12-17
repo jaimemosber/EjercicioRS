@@ -12,10 +12,10 @@
             <span class="boton-buscador-texto">Buscar</span>
         </button>
     </form>
+
     {%if usuarioArtistas%}
-        {{usuarioArtistas}}
         {%for u in usuarioArtistas%}
-        <p><strong>{{u.IdArtista}}</strong> Duración: {{u.TiempoEscucha}}</p>
+        <p><strong>{{u.IdArtista.IdArtista}}: {{u.IdArtista}}</strong> Duración: {{u.TiempoEscucha}}</p>
         {%endfor%}
     {%endif%}
 {% endblock %}
